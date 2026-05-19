@@ -25,7 +25,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     formData.append("file", file);
 
     try {
-      const token = await getToken();
+      const token = await getToken({ skipCache: true });
       const response = await axios.post(`${API_URL}/embed`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -46,7 +46,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     if (!question.trim()) return;
     setLoading(true);
     try {
-      const token = await getToken();
+      const token = await getToken({ skipCache: true });
       const response = await axios.post(
         `${API_URL}/ask`,
         { question, doc_id: docId || undefined },
