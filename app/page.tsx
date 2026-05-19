@@ -4,7 +4,9 @@ import { useState } from "react";
 import axios from "axios";
 import { useUser, SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 
+
 export default function Home() {
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   const { isSignedIn } = useUser();
   const { getToken } = useAuth();
 
@@ -24,7 +26,7 @@ export default function Home() {
 
     try {
       const token = await getToken();
-      const response = await axios.post("http://localhost:8000/embed", formData, {
+      const response = await axios.post(`${API_URL}/embed`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDocId(response.data.doc_id);
@@ -46,7 +48,7 @@ export default function Home() {
     try {
       const token = await getToken();
       const response = await axios.post(
-        "http://localhost:8000/ask",
+        `${API_URL}/ask`,
         { question, doc_id: docId || undefined },
         { headers: { Authorization: `Bearer ${token}` } }
       );
