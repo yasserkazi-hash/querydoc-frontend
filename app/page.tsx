@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import axios from "axios";
+import { useUser, SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 
 export default function Home() {
+  const { isSignedIn } = useUser();
+  const { getToken } = useAuth();
+
   const [file, setFile] = useState<File | null>(null);
   const [docId, setDocId] = useState<string>("");
   const [question, setQuestion] = useState<string>("");
@@ -11,7 +15,7 @@ export default function Home() {
   const [sources, setSources] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Upload and embed a document, then store its doc_id
+  // Upload & embed a document
   const handleEmbed = async () => {
     if (!file) return;
     setLoading(true);
@@ -19,7 +23,10 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      const response = await axios.post("http://localhost:8000/embed", formData);
+      const token = await getToken();
+      const response = await axios.post("http://localhost:8000/embed", formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setDocId(response.data.doc_id);
       setAnswer(`Document embedded! ID: ${response.data.doc_id}. You can now ask questions.`);
       setSources([]);
@@ -32,15 +39,17 @@ export default function Home() {
     }
   };
 
-  // Ask a question against the embedded document
+  // Ask a question
   const handleAsk = async () => {
     if (!question.trim()) return;
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:8000/ask", {
-        question: question,
-        doc_id: docId || undefined,
-      });
+      const token = await getToken();
+      const response = await axios.post(
+        "http://localhost:8000/ask",
+        { question, doc_id: docId || undefined },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setAnswer(response.data.answer);
       setSources(response.data.sources.map((s: any) => s.text));
     } catch (error: any) {
@@ -53,11 +62,28 @@ export default function Home() {
     }
   };
 
+  // If not signed in, show sign-in button
+  if (!isSignedIn) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-24">
+        <h1 className="text-4xl font-bold mb-8">QueryDoc</h1>
+        <SignInButton mode="modal">
+          <button className="px-4 py-2 bg-blue-600 text-white rounded">
+            Sign In
+          </button>
+        </SignInButton>
+      </main>
+    );
+  }
+
+  // Signed in – full app
   return (
     <main className="flex min-h-screen flex-col items-center justify-start p-8">
-      <h1 className="text-4xl font-bold mb-8">QueryDoc</h1>
+      <div className="w-full flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold">QueryDoc</h1>
+        <UserButton afterSignOutUrl="/" />
+      </div>
 
-      {/* File upload & embed section */}
       <div className="flex flex-col items-center gap-4 mb-8 p-4 border rounded">
         <input
           type="file"
@@ -74,7 +100,6 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Chat area */}
       <div className="w-full max-w-2xl flex flex-col gap-4">
         <div className="flex gap-2">
           <input
@@ -82,7 +107,7 @@ export default function Home() {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="Ask a question about the document..."
-            className="flex-1 p-2 border rounded"
+            className="flex-1 p-2 border rounded text-gray-900"
             onKeyDown={(e) => e.key === "Enter" && handleAsk()}
           />
           <button
@@ -96,13 +121,13 @@ export default function Home() {
 
         {answer && (
           <div className="p-4 border rounded bg-gray-50">
-            <p className="font-semibold">Answer:</p>
+            <p className="font-semibold text-gray-900">Answer:</p>
             <p className="whitespace-pre-wrap text-gray-900">{answer}</p>
             {sources.length > 0 && (
               <details className="mt-4">
-                <summary className="cursor-pointer text-sm text-gray-500">Sources</summary>
+                <summary className="cursor-pointer text-sm text-gray-700">Sources</summary>
                 {sources.map((src, idx) => (
-                  <p key={idx} className="text-xs text-gray-400 mt-1">
+                  <p key={idx} className="text-xs text-gray-500 mt-1">
                     [{idx + 1}] {src}
                   </p>
                 ))}
