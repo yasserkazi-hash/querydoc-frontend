@@ -81,7 +81,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-start p-8">
       <div className="w-full flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold">QueryDoc</h1>
-        <UserButton  />
+        <UserButton />
       </div>
 
       <div className="flex flex-col items-center gap-4 mb-8 p-4 border rounded">
